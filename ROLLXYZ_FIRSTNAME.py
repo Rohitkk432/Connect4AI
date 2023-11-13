@@ -15,6 +15,12 @@ class GameTreePlayer:
             return 2
         else:
             return 0
+        
+    def CheckP1Col(self,state1,state2):
+        for i in range(6):
+            for j in range(7):
+                if state1[i][j]!=state2[i][j]:
+                    return j
 
     def MoveFinder(self,currentState,depth):
         if depth==0:
@@ -25,6 +31,9 @@ class GameTreePlayer:
         winIndex=[]
         lossIndex=[]
         dkIndex=[]
+    
+        winNow = []
+        p1WinCols=[]
 
         for action in range(7):
             fourConnectDummy = FourConnect()
@@ -37,6 +46,7 @@ class GameTreePlayer:
                 
                 if gameWinner!=2:
                     try:
+                        state1 = fourConnectDummy.GetCurrentState()
                         fourConnectDummy.MyopicPlayerAction()
                         gameWinner = self.checkWinner(fourConnectDummy)
 
@@ -45,10 +55,14 @@ class GameTreePlayer:
                             bestMove1,rewardBest1 = self.MoveFinder(stateNow,depth-1)
                             rewards.append(rewardBest1)
                         else:
+                            state2 = fourConnectDummy.GetCurrentState()
+                            p1Move = self.CheckP1Col(state1,state2)
+                            p1WinCols.append(p1Move)
                             rewards.append(-1)
                     except AssertionError as e:  
                         rewards.append(0)
                 else:
+                    winNow.append(action)
                     rewards.append(1)
             else:
                 rewards.append(-2)
@@ -64,7 +78,13 @@ class GameTreePlayer:
             elif rewards[idx]==0:
                 dkIndex.append(idx)
         
-        if len(winIndex)>0:
+        if len(winNow)>0:
+            rewardBest=1
+            bestMove=random.choice(winNow)
+        elif len(p1WinCols)>0:
+            bestMove=random.choice(p1WinCols)
+            rewardBest=rewards[bestMove]
+        elif len(winIndex)>0:
             rewardBest=1
             bestMove=random.choice(winIndex)
         elif len(dkIndex)>0:
@@ -92,7 +112,7 @@ class GameTreePlayer:
         Action 0 is refers to the left-most column and action 6 refers to the right-most column.
         """
         
-        bestMove,rewardBest = self.MoveFinder(currentState,3)
+        bestMove,rewardBest = self.MoveFinder(currentState,5)
         
         # bestAction = input("Take action (0-6) : ")
         bestAction = bestMove
@@ -112,7 +132,7 @@ def LoadTestcaseStateFromCSVfile():
 
 def PlayGame():
     fourConnect = FourConnect()
-    # fourConnect.PrintGameState()
+    fourConnect.PrintGameState()
     gameTree = GameTreePlayer()
     
     move=0
@@ -123,7 +143,7 @@ def PlayGame():
             currentState = fourConnect.GetCurrentState()
             gameTreeAction = gameTree.FindBestAction(currentState)
             fourConnect.GameTreePlayerAction(gameTreeAction)
-        # fourConnect.PrintGameState()
+        fourConnect.PrintGameState()
         move += 1
         if fourConnect.winner!=None:
             break
@@ -132,11 +152,11 @@ def PlayGame():
     You can add your code here to count the number of wins average number of moves etc.
     You can modify the PlayGame() function to play multiple games if required.
     """
-    # if fourConnect.winner==None:
-    #     print("Game is drawn.")
-    # else:
-    #     print("Winner : Player {0}\n".format(fourConnect.winner))
-    # print("Moves : {0}".format(move))
+    if fourConnect.winner==None:
+        print("Game is drawn.")
+    else:
+        print("Winner : Player {0}\n".format(fourConnect.winner))
+    print("Moves : {0}".format(move))
     return fourConnect.winner,move
 
 def RunTestCase():
@@ -175,41 +195,41 @@ def RunTestCase():
 
 def main():
     
-    wins = 0
-    loss = 0
-    draw = 0
-    totalMovesInWin = 0
-    totalMovesInLoss = 0
-    totalMovesInDraw = 0
+    # wins = 0
+    # loss = 0
+    # draw = 0
+    # totalMovesInWin = 0
+    # totalMovesInLoss = 0
+    # totalMovesInDraw = 0
 
-    for times in range(50):
-        gameWinner,move = PlayGame()
-        if gameWinner==2:
-            wins+=1
-            totalMovesInWin+=move
-        elif gameWinner==1:
-            loss+=1
-            totalMovesInLoss+=move
-        else:
-            draw+=1
-            totalMovesInDraw+=move
+    # for times in range(50):
+    #     gameWinner,move = PlayGame()
+    #     if gameWinner==2:
+    #         wins+=1
+    #         totalMovesInWin+=move
+    #     elif gameWinner==1:
+    #         loss+=1
+    #         totalMovesInLoss+=move
+    #     else:
+    #         draw+=1
+    #         totalMovesInDraw+=move
 
-    print('-----50 Games-----\n')
+    # print('-----50 Games-----\n')
 
-    if wins>0:
-        avgMoveWin = totalMovesInWin/wins
-        print('Wins: ',wins,', Avg Moves: ',avgMoveWin,'\n')
+    # if wins>0:
+    #     avgMoveWin = totalMovesInWin/wins
+    #     print('Wins: ',wins,', Avg Moves: ',avgMoveWin,'\n')
 
-    if loss>0:
-        avgMoveLoss = totalMovesInLoss/loss
-        print('Losses: ',loss,', Avg Moves: ',avgMoveLoss,'\n')
+    # if loss>0:
+    #     avgMoveLoss = totalMovesInLoss/loss
+    #     print('Losses: ',loss,', Avg Moves: ',avgMoveLoss,'\n')
 
-    if draw>0 : 
-        avgMoveDraw = totalMovesInDraw/draw
-        print('Draws: ',draw,', Avg Moves: ',avgMoveDraw,'\n')
+    # if draw>0 : 
+    #     avgMoveDraw = totalMovesInDraw/draw
+    #     print('Draws: ',draw,', Avg Moves: ',avgMoveDraw,'\n')
 
 
-
+    # PlayGame()
     """
     You can modify PlayGame function for writing the report
     Modify the FindBestAction in GameTreePlayer class to implement Game tree search.
@@ -223,7 +243,7 @@ def main():
         See the code for RunTestCase() to understand what is expected.
     """
     
-    # RunTestCase()
+    RunTestCase()
 
 
 if __name__=='__main__':
