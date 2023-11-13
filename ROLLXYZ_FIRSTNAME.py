@@ -18,14 +18,9 @@ class GameTreePlayer:
 
     def MoveFinder(self,currentState,depth):
         if depth==0:
-            return -1,[]
+            return -1,0
         
-        correctMoves=[]
-        dontKnowMoves = []
-        incorrectMoves=[]
-        validActions = []
         bestMove = -1
-
         rewards=[]
 
         for action in range(7):
@@ -33,8 +28,7 @@ class GameTreePlayer:
             fourConnectDummy.SetCurrentState(currentState)
             gameWinner=0
 
-            if fourConnectDummy._CoinRowAfterAction(action)!=-1:
-                validActions.append(action)
+            if currentState[0][action]==0:
                 fourConnectDummy.GameTreePlayerAction(action)
                 gameWinner = self.checkWinner(fourConnectDummy)
                 
@@ -45,9 +39,8 @@ class GameTreePlayer:
 
                         if gameWinner!=1:
                             stateNow = fourConnectDummy.GetCurrentState()
-                            bestMove1,rewards1 = self.MoveFinder(stateNow,depth-1)
-                            
-                            rewards.append(max(rewards1,default=0))
+                            bestMove1,rewardBest1 = self.MoveFinder(stateNow,depth-1)
+                            rewards.append(rewardBest1)
                         else:
                             rewards.append(-1)
                     except AssertionError as e:  
@@ -60,9 +53,10 @@ class GameTreePlayer:
             del fourConnectDummy
             gc.collect()
 
-        bestMove = rewards.index(max(rewards,default=0))
+        rewardBest = max(rewards,default=0)
+        bestMove = rewards.index(rewardBest)
 
-        return bestMove,rewards
+        return bestMove,rewardBest
     
     def FindBestAction(self,currentState):
         """
@@ -74,7 +68,7 @@ class GameTreePlayer:
         Action 0 is refers to the left-most column and action 6 refers to the right-most column.
         """
         
-        bestMove,rewards = self.MoveFinder(currentState,3)
+        bestMove,rewardBest = self.MoveFinder(currentState,3)
         
         # bestAction = input("Take action (0-6) : ")
         bestAction = bestMove
