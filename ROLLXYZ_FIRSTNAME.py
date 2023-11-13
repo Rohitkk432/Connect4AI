@@ -14,7 +14,7 @@ class GameTreePlayer:
         elif game.winner == 2 :
             return 2
         else:
-            return 0 
+            return 0
 
     def MoveFinder(self,currentState,depth):
         if depth==0:
@@ -22,6 +22,9 @@ class GameTreePlayer:
         
         bestMove = -1
         rewards=[]
+        winIndex=[]
+        lossIndex=[]
+        dkIndex=[]
 
         for action in range(7):
             fourConnectDummy = FourConnect()
@@ -53,8 +56,29 @@ class GameTreePlayer:
             del fourConnectDummy
             gc.collect()
 
-        rewardBest = max(rewards,default=0)
-        bestMove = rewards.index(rewardBest)
+        for idx in range(7):
+            if rewards[idx]==1:
+                winIndex.append(idx)
+            elif rewards[idx]==-1:
+                lossIndex.append(idx)
+            elif rewards[idx]==0:
+                dkIndex.append(idx)
+        
+        if len(winIndex)>0:
+            rewardBest=1
+            bestMove=random.choice(winIndex)
+        elif len(dkIndex)>0:
+            rewardBest=0
+            bestMove=random.choice(dkIndex)
+        elif len(lossIndex)>0:
+            rewardBest=-1
+            bestMove=random.choice(lossIndex)
+        else:
+            rewardBest=-2
+            bestMove=0
+
+        # rewardBest = max(rewards,default=0)
+        # bestMove = rewards.index(rewardBest)
 
         return bestMove,rewardBest
     

@@ -170,7 +170,6 @@ class FourConnect:
         print(*['-','-','-','-','-','-','-'],sep=" ")
         for row in game:
             print(*row,sep=" ")
-            # GameTreePlayerAction
         print()
     
     def GetCurrentState(self):
