@@ -8,6 +8,7 @@ class GameTreePlayer:
     def __init__(self):
         pass
 
+    #just checks winner
     def checkWinner(self,game):
         if game.winner == 1 :
             return 1
@@ -16,6 +17,7 @@ class GameTreePlayer:
         else:
             return 0
         
+    # To find which move Myopic P1 plays
     def CheckP1Col(self,state1,state2):
         for i in range(6):
             for j in range(7):
@@ -27,49 +29,78 @@ class GameTreePlayer:
             return -1,0
         
         bestMove = -1
+
+        '''
+        # Rewards keeps track of rewards on each action
+            win = 1
+            draw = 0
+            lose = -1
+            invalid action = -2
+        # winIndex - actions where rewards are win
+        # lossIndex - actions where rewards are loss
+        # dkIndex - actions where rewards are draw/no winner yet
+        '''
         rewards=[]
         winIndex=[]
         lossIndex=[]
         dkIndex=[]
     
+        # moves which can result win in this level (now not after some moves)
         winNow = []
+        # moves which can lead to p1 win if not played by P2 now
         p1WinCols=[]
 
         for action in range(7):
+            #creating game from current state
             fourConnectDummy = FourConnect()
             fourConnectDummy.SetCurrentState(currentState)
             gameWinner=0
 
+            #checking action validity
             if currentState[0][action]==0:
+                #p2 playing action
                 fourConnectDummy.GameTreePlayerAction(action)
                 gameWinner = self.checkWinner(fourConnectDummy)
                 
+                #checking is p2 wins
                 if gameWinner!=2:
+                    #now p1 plays 
+                    #try block as if total moves exhausted p1 cant move and assert will throw error
                     try:
+                        #getting state before p1 play
                         state1 = fourConnectDummy.GetCurrentState()
+                        #p1 plays myopic
                         fourConnectDummy.MyopicPlayerAction()
                         gameWinner = self.checkWinner(fourConnectDummy)
 
+                        #checking is p1 wins
                         if gameWinner!=1:
                             stateNow = fourConnectDummy.GetCurrentState()
                             bestMove1,rewardBest1 = self.MoveFinder(stateNow,depth-1)
                             rewards.append(rewardBest1)
                         else:
+                            #p2 wins so we try to block
+                            #getting state after p1 play
                             state2 = fourConnectDummy.GetCurrentState()
+                            #finding p1 winning move so we can block it
                             p1Move = self.CheckP1Col(state1,state2)
                             p1WinCols.append(p1Move)
                             rewards.append(-1)
-                    except AssertionError as e:  
+                    #moves exhausted so throws and hence draw  
+                    except AssertionError as e:
                         rewards.append(0)
                 else:
+                    #p2 wins so reward add 1 and winNow add action
                     winNow.append(action)
                     rewards.append(1)
             else:
+                #not valid action
                 rewards.append(-2)
-
+            #clearing memory (as too many created in tree)
             del fourConnectDummy
             gc.collect()
 
+        #filling winIndex,lossIndex,dkIndex
         for idx in range(7):
             if rewards[idx]==1:
                 winIndex.append(idx)
@@ -77,28 +108,31 @@ class GameTreePlayer:
                 lossIndex.append(idx)
             elif rewards[idx]==0:
                 dkIndex.append(idx)
-        
+
+        #priority1 - win if possible now
         if len(winNow)>0:
             rewardBest=1
             bestMove=random.choice(winNow)
+        #priority2 - block p2 if he wins now 
         elif len(p1WinCols)>0:
             bestMove=random.choice(p1WinCols)
             rewardBest=rewards[bestMove]
+        #priority3 - win if possible in next moves
         elif len(winIndex)>0:
             rewardBest=1
             bestMove=random.choice(winIndex)
+        #priority4 - draw/no winner yet moves
         elif len(dkIndex)>0:
             rewardBest=0
             bestMove=random.choice(dkIndex)
+        #priority4 - no choice and we lose in next moves/now
         elif len(lossIndex)>0:
             rewardBest=-1
             bestMove=random.choice(lossIndex)
+        #no moves possible
         else:
             rewardBest=-2
             bestMove=0
-
-        # rewardBest = max(rewards,default=0)
-        # bestMove = rewards.index(rewardBest)
 
         return bestMove,rewardBest
     
