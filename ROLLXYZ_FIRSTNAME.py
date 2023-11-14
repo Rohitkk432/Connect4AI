@@ -16,7 +16,15 @@ class GameTreePlayer:
             return 2
         else:
             return 0
-        
+
+    def minOfArrIndx(self,arr):
+        minim = min(arr,default=10)
+        res = []
+        for i in range(len(arr)):
+            if arr[i]==minim:
+                res.append(i)
+        return res,minim
+    
     # To find which move Myopic P1 plays
     def CheckP1Col(self,state1,state2):
         for i in range(6):
@@ -25,8 +33,13 @@ class GameTreePlayer:
                     return j
 
     def MoveFinder(self,currentState,depth):
+
+        #relative depth of winning on action
+        winDepth=[10,10,10,10,10,10,10]
+        minDepthArr = []
+
         if depth==0:
-            return -1,0
+            return -1,0,winDepth
         
         bestMove = -1
 
@@ -49,6 +62,7 @@ class GameTreePlayer:
         winNow = []
         # moves which can lead to p1 win if not played by P2 now
         p1WinCols=[]
+        
 
         for action in range(7):
             #creating game from current state
@@ -76,7 +90,9 @@ class GameTreePlayer:
                         #checking is p1 wins
                         if gameWinner!=1:
                             stateNow = fourConnectDummy.GetCurrentState()
-                            bestMove1,rewardBest1 = self.MoveFinder(stateNow,depth-1)
+                            bestMove1,rewardBest1,winDepth1 = self.MoveFinder(stateNow,depth-1)
+                            minDepthArr1,minim1 = self.minOfArrIndx(winDepth1)
+                            winDepth[action]=minim1+1
                             rewards.append(rewardBest1)
                         else:
                             #p2 wins so we try to block
@@ -91,6 +107,7 @@ class GameTreePlayer:
                         rewards.append(0)
                 else:
                     #p2 wins so reward add 1 and winNow add action
+                    winDepth[action]=0
                     winNow.append(action)
                     rewards.append(1)
             else:
@@ -108,6 +125,8 @@ class GameTreePlayer:
                 lossIndex.append(idx)
             elif rewards[idx]==0:
                 dkIndex.append(idx)
+        
+        minDepthArr,minim = self.minOfArrIndx(winDepth)
 
         #priority1 - win if possible now
         if len(winNow)>0:
@@ -117,15 +136,19 @@ class GameTreePlayer:
         elif len(p1WinCols)>0:
             bestMove=random.choice(p1WinCols)
             rewardBest=rewards[bestMove]
-        #priority3 - win if possible in next moves
+        #priority3 - p1 wins later on min win Depth 
+        elif len(minDepthArr)>0 and minim<5:
+            bestMove=random.choice(minDepthArr)
+            rewardBest=1
+        #priority4 - win if possible in next moves
         elif len(winIndex)>0:
             rewardBest=1
             bestMove=random.choice(winIndex)
-        #priority4 - draw/no winner yet moves
+        #priority5 - draw/no winner yet moves
         elif len(dkIndex)>0:
             rewardBest=0
             bestMove=random.choice(dkIndex)
-        #priority4 - no choice and we lose in next moves/now
+        #priority6 - no choice and we lose in next moves/now
         elif len(lossIndex)>0:
             rewardBest=-1
             bestMove=random.choice(lossIndex)
@@ -134,7 +157,7 @@ class GameTreePlayer:
             rewardBest=-2
             bestMove=0
 
-        return bestMove,rewardBest
+        return bestMove,rewardBest,winDepth
     
     def FindBestAction(self,currentState):
         """
@@ -146,7 +169,7 @@ class GameTreePlayer:
         Action 0 is refers to the left-most column and action 6 refers to the right-most column.
         """
         
-        bestMove,rewardBest = self.MoveFinder(currentState,5)
+        bestMove,rewardBest,winDepth = self.MoveFinder(currentState,5)
         
         # bestAction = input("Take action (0-6) : ")
         bestAction = bestMove
