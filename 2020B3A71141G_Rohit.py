@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from FourConnect import * # See the FourConnect.py file
 import csv
+import datetime
 
 class GameTreePlayer:
     
@@ -35,6 +36,9 @@ class GameTreePlayer:
     def EvaluateMoves(self,rewards,winNow,p1WinCols,winDepth):
         minDepthArr = []
 
+        # winIndex - actions where rewards are win
+        # lossIndex - actions where rewards are loss
+        # dkIndex - actions where rewards are draw/no winner yet
         winIndex=[]
         lossIndex=[]
         dkIndex=[]
@@ -87,7 +91,6 @@ class GameTreePlayer:
 
         #relative depth of winning on action
         winDepth=[10,10,10,10,10,10,10]
-        minDepthArr = []
 
         if depth==0:
             return -1,0,winDepth
@@ -95,14 +98,12 @@ class GameTreePlayer:
         bestMove = -1
         rewardBest = 0
         '''
-        # Rewards keeps track of rewards on each action
+        # Rewards keeps track of rewards 
+        on each action at each max node
             win = 1
-            draw = 0
+            draw/no winner yet = 0
             lose = -1
             invalid action = -2
-        # winIndex - actions where rewards are win
-        # lossIndex - actions where rewards are loss
-        # dkIndex - actions where rewards are draw/no winner yet
         '''
         rewards=[]
     
@@ -176,7 +177,7 @@ class GameTreePlayer:
         Action 0 is refers to the left-most column and action 6 refers to the right-most column.
         """
         
-        bestMove,rewardBest,winDepth = self.MoveFinder(currentState,5)
+        bestMove,rewardBest,winDepth = self.MoveFinder(currentState,3)
         
         # bestAction = input("Take action (0-6) : ")
         bestAction = bestMove
@@ -195,6 +196,7 @@ def LoadTestcaseStateFromCSVfile():
 
 
 def PlayGame():
+    startTime = datetime.datetime.now()
     fourConnect = FourConnect()
     # fourConnect.PrintGameState()
     gameTree = GameTreePlayer()
@@ -221,7 +223,10 @@ def PlayGame():
     else:
         print("Winner : Player {0}\n".format(fourConnect.winner))
     print("Moves : {0}".format(move))
-    return fourConnect.winner,move
+    endTime = datetime.datetime.now()
+    timeDiff = endTime-startTime
+    timeInMiliSecs = int(timeDiff.total_seconds() * 1000)
+    return fourConnect.winner,move,timeInMiliSecs
 
 def RunTestCase():
     """
@@ -233,7 +238,7 @@ def RunTestCase():
     gameTree = GameTreePlayer()
     testcaseState = LoadTestcaseStateFromCSVfile()
     fourConnect.SetCurrentState(testcaseState)
-    # fourConnect.PrintGameState()
+    fourConnect.PrintGameState()
 
     move=0
     while move<5: #Player 2 must win in 5 moves
@@ -243,12 +248,12 @@ def RunTestCase():
             currentState = fourConnect.GetCurrentState()
             gameTreeAction = gameTree.FindBestAction(currentState)
             fourConnect.GameTreePlayerAction(gameTreeAction)
-        # fourConnect.PrintGameState()
+        fourConnect.PrintGameState()
         move += 1
         if fourConnect.winner!=None:
             break
     
-    # print("Roll no : 2021H10309999") #Put your roll number here
+    print("Roll no : 2020B3A71141G") #Put your roll number here
     
     if fourConnect.winner==2:
         print("Player 2 has won. Testcase passed.")
@@ -266,33 +271,44 @@ def main():
     totalMovesInLoss = 0
     totalMovesInDraw = 0
 
+    totalTimeInWin = 0
+    totalTimeInLoss = 0
+    totalTimeInDraw = 0
+
     for times in range(50):
-        gameWinner,move = PlayGame()
+        gameWinner,move,timeInMiliSecs = PlayGame()
         # gameWinner,move = RunTestCase()
 
         if gameWinner==2:
             wins+=1
             totalMovesInWin+=move
+            totalTimeInWin+=timeInMiliSecs
         elif gameWinner==1:
             loss+=1
             totalMovesInLoss+=move
+            totalTimeInLoss+=timeInMiliSecs
         else:
             draw+=1
             totalMovesInDraw+=move
+            totalTimeInDraw+=timeInMiliSecs
 
+    print("Roll no : 2020B3A71141G\n") #Put your roll number here
     print('-----50 Games-----\n')
-
+    print('#PlayGame:\n')
     if wins>0:
         avgMoveWin = totalMovesInWin/wins
-        print('Wins: ',wins,', Avg Moves: ',avgMoveWin,'\n')
+        avgTimeWin = totalTimeInWin/(wins*1000)
+        print('Wins: ',wins,', Avg Moves: ',avgMoveWin,', Avg Time: ',avgTimeWin,'sec\n')
 
     if loss>0:
         avgMoveLoss = totalMovesInLoss/loss
-        print('Losses: ',loss,', Avg Moves: ',avgMoveLoss,'\n')
+        avgTimeLoss = totalTimeInLoss/(loss*1000)
+        print('Losses: ',loss,', Avg Moves: ',avgMoveLoss,', Avg Time: ',avgTimeLoss,'sec\n')
 
     if draw>0 : 
         avgMoveDraw = totalMovesInDraw/draw
-        print('Draws: ',draw,', Avg Moves: ',avgMoveDraw,'\n')
+        avgTimeDraw = totalTimeInDraw/(draw*1000)
+        print('Draws: ',draw,', Avg Moves: ',avgMoveDraw,', Avg Time: ',avgTimeDraw,'sec\n')
 
 
     # PlayGame()
