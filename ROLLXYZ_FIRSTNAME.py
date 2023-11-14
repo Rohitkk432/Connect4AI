@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from FourConnect import * # See the FourConnect.py file
 import csv
-import gc
 
 class GameTreePlayer:
     
@@ -32,6 +31,57 @@ class GameTreePlayer:
             for j in range(7):
                 if state1[i][j]!=state2[i][j]:
                     return j
+                
+    def EvaluateMoves(self,rewards,winNow,p1WinCols,winDepth):
+        minDepthArr = []
+
+        winIndex=[]
+        lossIndex=[]
+        dkIndex=[]
+        #filling winIndex,lossIndex,dkIndex
+        for idx in range(7):
+            if rewards[idx]==1:
+                winIndex.append(idx)
+            elif rewards[idx]==-1:
+                lossIndex.append(idx)
+            elif rewards[idx]==0:
+                dkIndex.append(idx)
+        
+        minDepthArr,minim = self.minOfArrIndx(winDepth)
+
+        rewardBest=0
+        bestMove=-1
+
+        #priority1 - win if possible now
+        if len(winNow)>0:
+            rewardBest=1
+            bestMove=random.choice(winNow)
+        #priority2 - block p1 if he wins now 
+        elif len(p1WinCols)>0:
+            bestMove=random.choice(p1WinCols)
+            rewardBest=rewards[bestMove]
+        #priority3 - p2 wins later based on on min win Depth 
+        elif len(minDepthArr)>0 and minim<5:
+            bestMove=random.choice(minDepthArr)
+            rewardBest=1
+        #priority4 - win if possible in next moves
+        elif len(winIndex)>0:
+            rewardBest=1
+            bestMove=random.choice(winIndex)
+        #priority5 - draw/no winner yet moves
+        elif len(dkIndex)>0:
+            rewardBest=0
+            bestMove=random.choice(dkIndex)
+        #priority6 - no choice and we lose in next moves/now
+        elif len(lossIndex)>0:
+            rewardBest=-1
+            bestMove=random.choice(lossIndex)
+        #no moves possible
+        else:
+            rewardBest=-2
+            bestMove=0
+        return bestMove,rewardBest
+
 
     def MoveFinder(self,currentState,depth):
 
@@ -43,7 +93,7 @@ class GameTreePlayer:
             return -1,0,winDepth
         
         bestMove = -1
-
+        rewardBest = 0
         '''
         # Rewards keeps track of rewards on each action
             win = 1
@@ -55,9 +105,6 @@ class GameTreePlayer:
         # dkIndex - actions where rewards are draw/no winner yet
         '''
         rewards=[]
-        winIndex=[]
-        lossIndex=[]
-        dkIndex=[]
     
         # moves which can result win in this level (now not after some moves)
         winNow = []
@@ -114,49 +161,8 @@ class GameTreePlayer:
             else:
                 #not valid action
                 rewards.append(-2)
-            #clearing memory (as too many created in tree)
-            del fourConnectDummy
-            gc.collect()
 
-        #filling winIndex,lossIndex,dkIndex
-        for idx in range(7):
-            if rewards[idx]==1:
-                winIndex.append(idx)
-            elif rewards[idx]==-1:
-                lossIndex.append(idx)
-            elif rewards[idx]==0:
-                dkIndex.append(idx)
-        
-        minDepthArr,minim = self.minOfArrIndx(winDepth)
-
-        #priority1 - win if possible now
-        if len(winNow)>0:
-            rewardBest=1
-            bestMove=random.choice(winNow)
-        #priority2 - block p1 if he wins now 
-        elif len(p1WinCols)>0:
-            bestMove=random.choice(p1WinCols)
-            rewardBest=rewards[bestMove]
-        #priority3 - p2 wins later based on on min win Depth 
-        elif len(minDepthArr)>0 and minim<5:
-            bestMove=random.choice(minDepthArr)
-            rewardBest=1
-        #priority4 - win if possible in next moves
-        elif len(winIndex)>0:
-            rewardBest=1
-            bestMove=random.choice(winIndex)
-        #priority5 - draw/no winner yet moves
-        elif len(dkIndex)>0:
-            rewardBest=0
-            bestMove=random.choice(dkIndex)
-        #priority6 - no choice and we lose in next moves/now
-        elif len(lossIndex)>0:
-            rewardBest=-1
-            bestMove=random.choice(lossIndex)
-        #no moves possible
-        else:
-            rewardBest=-2
-            bestMove=0
+        bestMove,rewardBest = self.EvaluateMoves(rewards,winNow,p1WinCols,winDepth)
 
         return bestMove,rewardBest,winDepth
     
@@ -190,7 +196,7 @@ def LoadTestcaseStateFromCSVfile():
 
 def PlayGame():
     fourConnect = FourConnect()
-    fourConnect.PrintGameState()
+    # fourConnect.PrintGameState()
     gameTree = GameTreePlayer()
     
     move=0
@@ -201,7 +207,7 @@ def PlayGame():
             currentState = fourConnect.GetCurrentState()
             gameTreeAction = gameTree.FindBestAction(currentState)
             fourConnect.GameTreePlayerAction(gameTreeAction)
-        fourConnect.PrintGameState()
+        # fourConnect.PrintGameState()
         move += 1
         if fourConnect.winner!=None:
             break
@@ -227,7 +233,7 @@ def RunTestCase():
     gameTree = GameTreePlayer()
     testcaseState = LoadTestcaseStateFromCSVfile()
     fourConnect.SetCurrentState(testcaseState)
-    fourConnect.PrintGameState()
+    # fourConnect.PrintGameState()
 
     move=0
     while move<5: #Player 2 must win in 5 moves
@@ -237,54 +243,56 @@ def RunTestCase():
             currentState = fourConnect.GetCurrentState()
             gameTreeAction = gameTree.FindBestAction(currentState)
             fourConnect.GameTreePlayerAction(gameTreeAction)
-        fourConnect.PrintGameState()
+        # fourConnect.PrintGameState()
         move += 1
         if fourConnect.winner!=None:
             break
     
-    print("Roll no : 2021H10309999") #Put your roll number here
+    # print("Roll no : 2021H10309999") #Put your roll number here
     
     if fourConnect.winner==2:
         print("Player 2 has won. Testcase passed.")
     else:
         print("Player 2 could not win in 5 moves. Testcase failed.")
     print("Moves : {0}".format(move))
-    
+    return fourConnect.winner,move
 
 def main():
     
-    # wins = 0
-    # loss = 0
-    # draw = 0
-    # totalMovesInWin = 0
-    # totalMovesInLoss = 0
-    # totalMovesInDraw = 0
+    wins = 0
+    loss = 0
+    draw = 0
+    totalMovesInWin = 0
+    totalMovesInLoss = 0
+    totalMovesInDraw = 0
 
-    # for times in range(50):
-    #     gameWinner,move = PlayGame()
-    #     if gameWinner==2:
-    #         wins+=1
-    #         totalMovesInWin+=move
-    #     elif gameWinner==1:
-    #         loss+=1
-    #         totalMovesInLoss+=move
-    #     else:
-    #         draw+=1
-    #         totalMovesInDraw+=move
+    for times in range(50):
+        gameWinner,move = PlayGame()
+        # gameWinner,move = RunTestCase()
 
-    # print('-----50 Games-----\n')
+        if gameWinner==2:
+            wins+=1
+            totalMovesInWin+=move
+        elif gameWinner==1:
+            loss+=1
+            totalMovesInLoss+=move
+        else:
+            draw+=1
+            totalMovesInDraw+=move
 
-    # if wins>0:
-    #     avgMoveWin = totalMovesInWin/wins
-    #     print('Wins: ',wins,', Avg Moves: ',avgMoveWin,'\n')
+    print('-----50 Games-----\n')
 
-    # if loss>0:
-    #     avgMoveLoss = totalMovesInLoss/loss
-    #     print('Losses: ',loss,', Avg Moves: ',avgMoveLoss,'\n')
+    if wins>0:
+        avgMoveWin = totalMovesInWin/wins
+        print('Wins: ',wins,', Avg Moves: ',avgMoveWin,'\n')
 
-    # if draw>0 : 
-    #     avgMoveDraw = totalMovesInDraw/draw
-    #     print('Draws: ',draw,', Avg Moves: ',avgMoveDraw,'\n')
+    if loss>0:
+        avgMoveLoss = totalMovesInLoss/loss
+        print('Losses: ',loss,', Avg Moves: ',avgMoveLoss,'\n')
+
+    if draw>0 : 
+        avgMoveDraw = totalMovesInDraw/draw
+        print('Draws: ',draw,', Avg Moves: ',avgMoveDraw,'\n')
 
 
     # PlayGame()
@@ -301,7 +309,7 @@ def main():
         See the code for RunTestCase() to understand what is expected.
     """
     
-    RunTestCase()
+    # RunTestCase()
 
 
 if __name__=='__main__':
