@@ -17,6 +17,7 @@ class GameTreePlayer:
         else:
             return 0
 
+    #func to get min number in array and its indexes
     def minOfArrIndx(self,arr):
         minim = min(arr,default=10)
         res = []
@@ -132,11 +133,11 @@ class GameTreePlayer:
         if len(winNow)>0:
             rewardBest=1
             bestMove=random.choice(winNow)
-        #priority2 - block p2 if he wins now 
+        #priority2 - block p1 if he wins now 
         elif len(p1WinCols)>0:
             bestMove=random.choice(p1WinCols)
             rewardBest=rewards[bestMove]
-        #priority3 - p1 wins later on min win Depth 
+        #priority3 - p2 wins later based on on min win Depth 
         elif len(minDepthArr)>0 and minim<5:
             bestMove=random.choice(minDepthArr)
             rewardBest=1
