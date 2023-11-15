@@ -6,7 +6,44 @@ import datetime
 class GameTreePlayer:
     
     def __init__(self):
+        self.movesPlayedBoth = []
+        self.moveOrdering = []
+        self.stateOrder=[]
+        self.followedTill=0
+        self.usedEvaluation=0
         pass
+
+    def getUsedEval(self):
+        return self.usedEvaluation
+    
+    def removeUnfollowedOrders(self):
+        if len(self.movesPlayedBoth)<2:
+            return
+        followers = []
+        lastP2 = self.movesPlayedBoth[len(self.movesPlayedBoth)-2]
+        lastP1 = self.movesPlayedBoth[len(self.movesPlayedBoth)-1]
+        if len(self.moveOrdering)>self.followedTill+1:
+            if self.moveOrdering[self.followedTill]==lastP2 and self.moveOrdering[self.followedTill+1]==lastP1:
+                followers=(self.moveOrdering.copy())
+        self.followedTill+=2
+        self.moveOrdering=followers
+
+    def getNextInOrder(self):
+        if len(self.moveOrdering)>0:
+            bestOrder = self.moveOrdering
+            if len(bestOrder)>self.followedTill:
+                self.followedTill+=1
+                return bestOrder[self.followedTill-1]
+        self.followedTill=0
+        return -1
+    
+    def makeP2MoveInStateAndStore(self,state,action):
+        dummy = state.copy()
+        for i in range(6):
+            if dummy[i][action]!=0:
+                dummy[i][action]=2
+                break
+        self.stateOrder.append(dummy)
 
     #just checks winner
     def checkWinner(self,game):
@@ -93,7 +130,7 @@ class GameTreePlayer:
         winDepth=[10,10,10,10,10,10,10]
 
         if depth==0:
-            return -1,0,winDepth
+            return -1,0,winDepth,[]
         
         bestMove = -1
         rewardBest = 0
@@ -111,6 +148,8 @@ class GameTreePlayer:
         winNow = []
         # moves which can lead to p1 win if not played by P2 now
         p1WinCols=[]
+
+        moveOrder=[]
         
 
         for action in range(7):
@@ -118,6 +157,8 @@ class GameTreePlayer:
             fourConnectDummy = FourConnect()
             fourConnectDummy.SetCurrentState(currentState)
             gameWinner=0
+
+            moveOrder_inner = []
 
             #checking action validity
             if currentState[0][action]==0:
@@ -136,19 +177,25 @@ class GameTreePlayer:
                         fourConnectDummy.MyopicPlayerAction()
                         gameWinner = self.checkWinner(fourConnectDummy)
 
+                        #getting state after p1 play
+                        state2 = fourConnectDummy.GetCurrentState()
+                        #finding p1 winning move
+                        p1Move = self.CheckP1Col(state1,state2)
+
                         #checking is p1 wins
                         if gameWinner!=1:
                             stateNow = fourConnectDummy.GetCurrentState()
-                            bestMove1,rewardBest1,winDepth1 = self.MoveFinder(stateNow,depth-1)
+                            bestMove1,rewardBest1,winDepth1,moveOrder1 = self.MoveFinder(stateNow,depth-1)
                             minDepthArr1,minim1 = self.minOfArrIndx(winDepth1)
                             winDepth[action]=minim1+1
                             rewards.append(rewardBest1)
+                            #append to move order
+                            moveOrder_inner.append(action)
+                            moveOrder_inner.append(p1Move)
+                            for mo1 in moveOrder1:
+                                moveOrder_inner.append(mo1)
                         else:
                             #p2 wins so we try to block
-                            #getting state after p1 play
-                            state2 = fourConnectDummy.GetCurrentState()
-                            #finding p1 winning move so we can block it
-                            p1Move = self.CheckP1Col(state1,state2)
                             p1WinCols.append(p1Move)
                             rewards.append(-1)
                     #moves exhausted so throws and hence draw  
@@ -156,6 +203,7 @@ class GameTreePlayer:
                         rewards.append(0)
                 else:
                     #p2 wins so reward add 1 and winNow add action
+                    moveOrder_inner.append(action)
                     winDepth[action]=0
                     winNow.append(action)
                     rewards.append(1)
@@ -163,9 +211,11 @@ class GameTreePlayer:
                 #not valid action
                 rewards.append(-2)
 
+            moveOrder.append(moveOrder_inner)
+
         bestMove,rewardBest = self.EvaluateMoves(rewards,winNow,p1WinCols,winDepth)
 
-        return bestMove,rewardBest,winDepth
+        return bestMove,rewardBest,winDepth,moveOrder[bestMove].copy()
     
     def FindBestAction(self,currentState):
         """
@@ -176,9 +226,27 @@ class GameTreePlayer:
         Action refers to the column in which you decide to put your coin. The actions (and columns) are numbered from left to right.
         Action 0 is refers to the left-most column and action 6 refers to the right-most column.
         """
+        self.stateOrder.append(currentState.copy())
+        if len(self.stateOrder)>=2:
+            p1Move = self.CheckP1Col(self.stateOrder[len(self.stateOrder)-2],self.stateOrder[len(self.stateOrder)-1])
+            self.movesPlayedBoth.append(p1Move)
+
+        depth = 3
         
-        bestMove,rewardBest,winDepth = self.MoveFinder(currentState,3)
+        #purge unfollowed ordering
+        self.removeUnfollowedOrders()
+        #if any order there get best possible move
+        heuristicAction  = self.getNextInOrder()
+        bestMove = -1
+        if heuristicAction == -1:
+            self.usedEvaluation+=1
+            bestMove,rewardBest,winDepth,moveOrder = self.MoveFinder(currentState,depth)
+            self.moveOrdering=moveOrder.copy()
+        else:
+            bestMove=heuristicAction
         
+        self.makeP2MoveInStateAndStore(currentState,bestMove)
+        self.movesPlayedBoth.append(bestMove)
         # bestAction = input("Take action (0-6) : ")
         bestAction = bestMove
         return bestAction
@@ -218,11 +286,12 @@ def PlayGame():
     You can add your code here to count the number of wins average number of moves etc.
     You can modify the PlayGame() function to play multiple games if required.
     """
-    if fourConnect.winner==None:
-        print("Game is drawn.")
-    else:
-        print("Winner : Player {0}\n".format(fourConnect.winner))
-    print("Moves : {0}".format(move))
+    # if fourConnect.winner==None:
+    #     print("Game is drawn.")
+    # else:
+    #     print("Winner : Player {0}\n".format(fourConnect.winner))
+    # print("Moves : {0}".format(move))
+
     endTime = datetime.datetime.now()
     timeDiff = endTime-startTime
     timeInMiliSecs = int(timeDiff.total_seconds() * 1000)
