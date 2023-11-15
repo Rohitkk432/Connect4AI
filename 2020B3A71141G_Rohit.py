@@ -292,7 +292,7 @@ def PlayGame():
     startTime = datetime.datetime.now()
     
     fourConnect = FourConnect()
-    # fourConnect.PrintGameState()
+    fourConnect.PrintGameState()
     gameTree = GameTreePlayer()
     
     move=0
@@ -303,7 +303,7 @@ def PlayGame():
             currentState = fourConnect.GetCurrentState()
             gameTreeAction = gameTree.FindBestAction(currentState)
             fourConnect.GameTreePlayerAction(gameTreeAction)
-        # fourConnect.PrintGameState()
+        fourConnect.PrintGameState()
         move += 1
         if fourConnect.winner!=None:
             break
@@ -312,11 +312,11 @@ def PlayGame():
     You can add your code here to count the number of wins average number of moves etc.
     You can modify the PlayGame() function to play multiple games if required.
     """
-    # if fourConnect.winner==None:
-    #     print("Game is drawn.")
-    # else:
-    #     print("Winner : Player {0}\n".format(fourConnect.winner))
-    # print("Moves : {0}".format(move))
+    if fourConnect.winner==None:
+        print("Game is drawn.")
+    else:
+        print("Winner : Player {0}\n".format(fourConnect.winner))
+    print("Moves : {0}".format(move))
 
     endTime = datetime.datetime.now()
     timeDiff = endTime-startTime
@@ -359,51 +359,51 @@ def RunTestCase():
 
 def main():
     
-    wins = 0
-    loss = 0
-    draw = 0
-    totalMovesInWin = 0
-    totalMovesInLoss = 0
-    totalMovesInDraw = 0
+    # wins = 0
+    # loss = 0
+    # draw = 0
+    # totalMovesInWin = 0
+    # totalMovesInLoss = 0
+    # totalMovesInDraw = 0
 
-    totalTimeInWin = 0
-    totalTimeInLoss = 0
-    totalTimeInDraw = 0
+    # totalTimeInWin = 0
+    # totalTimeInLoss = 0
+    # totalTimeInDraw = 0
 
-    for times in range(50):
-        gameWinner,move,timeInMiliSecs = PlayGame()
-        # gameWinner,move = RunTestCase()
+    # for times in range(50):
+    #     gameWinner,move,timeInMiliSecs = PlayGame()
+    #     # gameWinner,move = RunTestCase()
 
-        if gameWinner==2:
-            wins+=1
-            totalMovesInWin+=move
-            totalTimeInWin+=timeInMiliSecs
-        elif gameWinner==1:
-            loss+=1
-            totalMovesInLoss+=move
-            totalTimeInLoss+=timeInMiliSecs
-        else:
-            draw+=1
-            totalMovesInDraw+=move
-            totalTimeInDraw+=timeInMiliSecs
+    #     if gameWinner==2:
+    #         wins+=1
+    #         totalMovesInWin+=move
+    #         totalTimeInWin+=timeInMiliSecs
+    #     elif gameWinner==1:
+    #         loss+=1
+    #         totalMovesInLoss+=move
+    #         totalTimeInLoss+=timeInMiliSecs
+    #     else:
+    #         draw+=1
+    #         totalMovesInDraw+=move
+    #         totalTimeInDraw+=timeInMiliSecs
 
-    print("Roll no : 2020B3A71141G\n") #Put your roll number here
-    print('-----50 Games-----\n')
-    print('#PlayGame:\n')
-    if wins>0:
-        avgMoveWin = totalMovesInWin/wins
-        avgTimeWin = totalTimeInWin/(wins*1000)
-        print('Wins: ',wins,', Avg Moves: ',avgMoveWin,', Avg Time: ',avgTimeWin,'sec\n')
+    # print("Roll no : 2020B3A71141G\n") #Put your roll number here
+    # print('-----50 Games-----\n')
+    # print('#PlayGame:\n')
+    # if wins>0:
+    #     avgMoveWin = totalMovesInWin/wins
+    #     avgTimeWin = totalTimeInWin/(wins*1000)
+    #     print('Wins: ',wins,', Avg Moves: ',avgMoveWin,', Avg Time: ',avgTimeWin,'sec\n')
 
-    if loss>0:
-        avgMoveLoss = totalMovesInLoss/loss
-        avgTimeLoss = totalTimeInLoss/(loss*1000)
-        print('Losses: ',loss,', Avg Moves: ',avgMoveLoss,', Avg Time: ',avgTimeLoss,'sec\n')
+    # if loss>0:
+    #     avgMoveLoss = totalMovesInLoss/loss
+    #     avgTimeLoss = totalTimeInLoss/(loss*1000)
+    #     print('Losses: ',loss,', Avg Moves: ',avgMoveLoss,', Avg Time: ',avgTimeLoss,'sec\n')
 
-    if draw>0 : 
-        avgMoveDraw = totalMovesInDraw/draw
-        avgTimeDraw = totalTimeInDraw/(draw*1000)
-        print('Draws: ',draw,', Avg Moves: ',avgMoveDraw,', Avg Time: ',avgTimeDraw,'sec\n')
+    # if draw>0 : 
+    #     avgMoveDraw = totalMovesInDraw/draw
+    #     avgTimeDraw = totalTimeInDraw/(draw*1000)
+    #     print('Draws: ',draw,', Avg Moves: ',avgMoveDraw,', Avg Time: ',avgTimeDraw,'sec\n')
 
 
     # PlayGame()
@@ -420,7 +420,7 @@ def main():
         See the code for RunTestCase() to understand what is expected.
     """
     
-    # RunTestCase()
+    RunTestCase()
 
 
 if __name__=='__main__':
