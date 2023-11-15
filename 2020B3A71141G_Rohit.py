@@ -6,16 +6,24 @@ import datetime
 class GameTreePlayer:
     
     def __init__(self):
+        # order or moves played last is P1, second last P2  
         self.movesPlayedBoth = []
+        # order of moves if followed by p1,p2 starts from move of p2
+        # then keep following
         self.moveOrdering = []
+        # order or states used to find p1 move to add to moves played by both
         self.stateOrder=[]
+        # index till which  moveOrdering is followed
         self.followedTill=0
+        # number of times evaluation function called (i.e. didn't follow heuristic order)
         self.usedEvaluation=0
         pass
 
+    #get usedEvaluation to print somewhere
     def getUsedEval(self):
         return self.usedEvaluation
     
+    #check and remove order if now followed
     def removeUnfollowedOrders(self):
         if len(self.movesPlayedBoth)<2:
             return
@@ -28,15 +36,19 @@ class GameTreePlayer:
         self.followedTill+=2
         self.moveOrdering=followers
 
+    #if following get next in Order
     def getNextInOrder(self):
         if len(self.moveOrdering)>0:
             bestOrder = self.moveOrdering
             if len(bestOrder)>self.followedTill:
                 self.followedTill+=1
                 return bestOrder[self.followedTill-1]
+        #if not following then set followed till to 0
+        # and return -1
         self.followedTill=0
         return -1
     
+    #make P2 move in arg state and store it in stateOrder
     def makeP2MoveInStateAndStore(self,state,action):
         dummy = state.copy()
         for i in range(6):
@@ -158,6 +170,7 @@ class GameTreePlayer:
             fourConnectDummy.SetCurrentState(currentState)
             gameWinner=0
 
+            #move order saved here of this action
             moveOrder_inner = []
 
             #checking action validity
@@ -189,9 +202,13 @@ class GameTreePlayer:
                             minDepthArr1,minim1 = self.minOfArrIndx(winDepth1)
                             winDepth[action]=minim1+1
                             rewards.append(rewardBest1)
+                            
                             #append to move order
+                            #append move of this action
                             moveOrder_inner.append(action)
+                            #append move of P1 myopic
                             moveOrder_inner.append(p1Move)
+                            #append moves of the tree branch
                             for mo1 in moveOrder1:
                                 moveOrder_inner.append(mo1)
                         else:
@@ -203,18 +220,20 @@ class GameTreePlayer:
                         rewards.append(0)
                 else:
                     #p2 wins so reward add 1 and winNow add action
-                    moveOrder_inner.append(action)
                     winDepth[action]=0
                     winNow.append(action)
                     rewards.append(1)
+                    #append the winning move to order
+                    moveOrder_inner.append(action)
             else:
                 #not valid action
                 rewards.append(-2)
-
+            #append each actions moveOrder_inner
             moveOrder.append(moveOrder_inner)
 
         bestMove,rewardBest = self.EvaluateMoves(rewards,winNow,p1WinCols,winDepth)
 
+        #we know we only choosing best move for P2 , so return only that new move order
         return bestMove,rewardBest,winDepth,moveOrder[bestMove].copy()
     
     def FindBestAction(self,currentState):
@@ -226,28 +245,34 @@ class GameTreePlayer:
         Action refers to the column in which you decide to put your coin. The actions (and columns) are numbered from left to right.
         Action 0 is refers to the left-most column and action 6 refers to the right-most column.
         """
+        #save state before p2 turn
         self.stateOrder.append(currentState.copy())
         if len(self.stateOrder)>=2:
+            #find p1 move played before the P2 gameTree func call and append it to movesPlayedBoth
             p1Move = self.CheckP1Col(self.stateOrder[len(self.stateOrder)-2],self.stateOrder[len(self.stateOrder)-1])
             self.movesPlayedBoth.append(p1Move)
 
+        #depth
         depth = 3
         
         #purge unfollowed ordering
         self.removeUnfollowedOrders()
-        #if any order there get best possible move
+        #if follows order get next move
         heuristicAction  = self.getNextInOrder()
         bestMove = -1
+        #doesn't follow heuristic move order
         if heuristicAction == -1:
             self.usedEvaluation+=1
             bestMove,rewardBest,winDepth,moveOrder = self.MoveFinder(currentState,depth)
             self.moveOrdering=moveOrder.copy()
+        #follows heuristic move order
         else:
             bestMove=heuristicAction
         
+        #P2 move is not played yet so we make out function make state of played and save it
         self.makeP2MoveInStateAndStore(currentState,bestMove)
         self.movesPlayedBoth.append(bestMove)
-        # bestAction = input("Take action (0-6) : ")
+
         bestAction = bestMove
         return bestAction
 
@@ -265,6 +290,7 @@ def LoadTestcaseStateFromCSVfile():
 
 def PlayGame():
     startTime = datetime.datetime.now()
+    
     fourConnect = FourConnect()
     # fourConnect.PrintGameState()
     gameTree = GameTreePlayer()
