@@ -253,7 +253,7 @@ class GameTreePlayer:
             self.movesPlayedBoth.append(p1Move)
 
         #depth
-        depth = 3
+        depth = 5
         
         #purge unfollowed ordering
         self.removeUnfollowedOrders()
